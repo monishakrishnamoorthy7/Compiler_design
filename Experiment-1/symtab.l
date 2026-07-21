@@ -1,37 +1,83 @@
 %{
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+struct symtab {
+    char name[30];
+    int type;
+} symtab[100];
+
+int sc = 0;
+
+int lookup(char *s) {
+    int i;
+    for (i = 0; i < sc; i++)
+        if (strcmp(symtab[i].name, s) == 0)
+            return i;
+    return -1;
+}
+
+void insert(char *s) {
+    if (lookup(s) == -1) {
+        strcpy(symtab[sc].name, s);
+        symtab[sc].type = 1;
+        sc++;
+    }
+}
 %}
 
-LETTER  [a-zA-Z]
-DIGIT   [0-9]
-ID      {LETTER}({LETTER}|{DIGIT})*
+DIGIT [0-9]
+ID [a-zA-Z_][a-zA-Z0-9_]*
+%%
+
+
+"/*"([^*]|\*+[^*/])*\*+"/"     { printf("Comment : %s\n", yytext); }
+"//".*                         { printf("Comment : %s\n", yytext); }
+
+{ID}                           {
+                                  insert(yytext);
+                                  printf("Identifier : %s\n", yytext);
+                               }
+
+{DIGIT}+                       { printf("Constant : %s\n", yytext); }
+
+"+"|"-"|"*"|"/"|"="|"<"|">"    {
+                                  printf("Operator : %s\n", yytext);
+                               }
+
+[ \t\n]                        { /* skip whitespace */ }
+
+.                              { /* ignore other characters */ }
 
 %%
 
-int|float|char|double|void|return|if|else|for|while    { printf("Keyword\t\t%s\n", yytext); }
-
-{ID}           { printf("Identifier\t%s\n", yytext); }
-
-[0-9]+         { printf("Number\t\t%s\n", yytext); }
-
-"+"|"-"|"*"|"/"|"="|"=="|"<"|">"|"<="|">="   { printf("Operator\t%s\n", yytext); }
-
-";"|","|"("|")"|"\{"|"\}"    { printf("Symbol\t\t%s\n", yytext); }
-
-[ \t\n]+       ;
-
-.              { printf("Unknown\t\t%s\n", yytext); }
-
-%%
-
-int yywrap(void)
-{
+int yywrap() {
     return 1;
 }
 
-int main(void)
-{
-    printf("Enter C Program:\n");
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        printf("Usage: %s <input file>\n", argv[0]);
+        return 1;
+    }
+
+    yyin = fopen(argv[1], "r");
+
+    if (!yyin) {
+        printf("Cannot open file %s\n", argv[1]);
+        return 1;
+    }
+
     yylex();
+
+    printf("\nSYMBOL TABLE\n");
+    printf("S.No\tName\n");
+
+    int i;
+    for (i = 0; i < sc; i++)
+        printf("%d\t%s\n", i + 1, symtab[i].name);
+
+    fclose(yyin);
     return 0;
 }

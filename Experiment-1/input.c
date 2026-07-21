@@ -1,7 +1,2 @@
-int main()
-{
-    int a = 10;
-    int b = 20;
-    int sum = a + b;
-    return 0;
-}
+int a = 10; // sum variable
+b = a + 5;
